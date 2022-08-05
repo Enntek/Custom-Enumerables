@@ -1,10 +1,9 @@
 # require 'pry-byebug'
 
 module Enumerable
-  # Your code goes here
   def my_each
     return to_enum(:my_each) unless block_given?
-    
+
     if self.is_a?(Array)
       self.size.times { |index| yield self[index] }
     elsif self.is_a?(Hash)
@@ -42,20 +41,46 @@ module Enumerable
       truthy_hash
     end
   end
+
+  def my_all?(pattern = nil, &block)
+    self.my_each { |item| return false unless pattern === item } unless block_given?
+
+    self.my_each { |item| return false unless block.call(item) } unless pattern
+
+    true
+  end
+
+  def my_tot?(pattern = nil)
+    expr = block_given? ? ->(elem) { yield elem } : ->(elem) { pattern === elem }
+    my_each { |elem| return false unless expr.call(elem) }
+    true
+  end
+
+
+  # Below methods will only work with arrays but will not work if the array contains
+  # nil value
+  # def my_every?(argv=nil, &block)
+  #   # block = Proc.new { |item| item unless item.nil? || !item } unless block_given?
+  #   block = Proc.new { |item| item if argv === item} unless argv.nil?
+  #   self.my_each { |item| return false unless block.call(item) }
+    
+  #   true
+  # end
+
 end
 
-# You will first have to define my_each
-# on the Array class. Methods defined in
-# your enumerable module will have access
-# to this method
+
 class Array
   include Enumerable
-
 end
 
+arr = [1, 2, 3, 4]
 
-arr = [11, 22, 33]
-hash = { a: 'apple', b: 'banana' }
+# p arr.my_every? { |item| item == nil }
+# hash = { a: 'apple', b: 'banana' }
+
+# arr.my_all? { |item| p item }
+p arr.my_tot? { |item| item > 1 }
 
 # my_select (select is like filter)
 # p arr.my_select { |el| el > 11 }
