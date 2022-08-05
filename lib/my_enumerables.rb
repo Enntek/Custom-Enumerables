@@ -50,12 +50,12 @@ module Enumerable
     true
   end
 
-  def my_tot?(pattern = nil)
-    expr = block_given? ? ->(elem) { yield elem } : ->(elem) { pattern === elem }
-    my_each { |elem| return false unless expr.call(elem) }
-    true
-  end
-
+  # def my_tot?(pattern = nil)
+  # this line is interesting, lambda use: ->(elem) {yield elem}
+  #   expr = block_given? ? ->(elem) { yield elem } : ->(elem) { pattern === elem }
+  #   my_each { |elem| return false unless expr.call(elem) }
+  #   true
+  # end
 
   # Below methods will only work with arrays but will not work if the array contains
   # nil value
@@ -66,9 +66,28 @@ module Enumerable
     
   #   true
   # end
-
 end
 
+module Enumerable
+
+  def my_any?(pattern = nil, &block)
+    self.my_each { |el| return true if pattern === el } unless block_given?
+
+    self.my_each { |el| return true if block.call(el) } unless pattern
+
+    false
+  end
+
+  def my_none?(pattern = nil, &block)
+    return 'f is for false' if block_given? == false && pattern.nil?
+
+    my_each { |el| return false if pattern === el } unless block_given?
+
+    my_each { |el| return false if block.call(el) } unless pattern
+
+    true
+  end
+end
 
 class Array
   include Enumerable
@@ -76,11 +95,25 @@ end
 
 arr = [1, 2, 3, 4]
 
+val = 4
+my_lamba = ->(el) { el == val }
+my_proc = Proc.new { |el| el == val }
+# my_lambda = lambda { el == val }
+# my_proc = proc { |el| el == val }
+
+
+
+
+# p arr.none?(String)
+# p arr.my_none?(String)
+# p arr.my_any?(Symbol)
+# p arr.any?
+
 # p arr.my_every? { |item| item == nil }
 # hash = { a: 'apple', b: 'banana' }
 
 # arr.my_all? { |item| p item }
-p arr.my_tot? { |item| item > 1 }
+# p arr.my_tot? { |item| item > 1 }
 
 # my_select (select is like filter)
 # p arr.my_select { |el| el > 11 }
