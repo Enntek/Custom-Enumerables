@@ -1,4 +1,19 @@
 # require 'pry-byebug'
+# when you iterate, the |index| argument magically appears inside the block
+# that's the only magic that happens
+# the elements appear because you use index to retrieve them from the array
+# self.size.times { |index| yield(self[index], index) }
+# when you use this iterator, you will include a block: { |element, index| code }
+# behind the scenes { |index| yield(self[index], index) } what you write { |element, index| code }
+# there's a block behind the scenes of your block, it has the same number of arguments
+# and your block uses the parameters it passes when the method yields to your block
+
+# observation: when you include a block i.e. arr.inject(&a_proc), the acc is nil
+# ruby sees arr.inject(&a_proc) as arr.inject { your code }
+# observation: to reduce/inject a hash, you must use args like this: |acc, (k, v)|
+# recall: when you have an array, you can separate out the items with parens
+
+require 'pry-byebug'
 
 module Enumerable
   def my_each
@@ -25,7 +40,7 @@ module Enumerable
     self
   end
 
-  # the block is asking for a boolean value
+  # block.call returns a boolean
   def my_select(&block)
     return to_enum(:my_select) unless block_given?
 
@@ -95,38 +110,45 @@ module Enumerable
     array
   end
 
-  # experiment more with inject.
-  def my_inject(accumulator = nil, &block)
-    arg = args[0] unless args.nil?
-
-    if arg.nil?
-      accumulator = self.first
+  # work on symbol argument
+  def my_inject(acc = nil, &block)
+    if acc.nil?
+      acc = self.first
+      i = 1
     else
-      accumulator = arg
+      i = 0
     end
 
-    self.my_each do |el|
-      accumulator = block.call(accumulator, el)
+    case self
+    when Array
+      while i < self.size
+        return_val = block.call(acc, self[i])
+        acc = return_val
+        i += 1
+      end
+    when Hash
+      while i < self.size
+        key = self.keys[i]
+        value = self[keys[i]]
+        return_val = block.call(acc, [key, value])
+        acc = return_val
+        i += 1
+      end
     end
 
-    accumulator
+    acc
   end
-
-
 end
 
 class Array
   include Enumerable
 end
 
-# arr = %w(turtle rabbit)
-# hash = { a: 'apple', b: 'banana' }
 
-arr = [2, 3]
-aproc = Proc.new { |sum, n| sum * n }
+arr = [10, 20, 30]
+a_hash = { a: 'apple', b: 'banana' }
 
-# arr.my_inject(&aproc)
-p arr.inject(&aproc)
-
-
-
+a_hash.my_inject({}) do |hsh, h|
+  p h
+  hsh
+end
